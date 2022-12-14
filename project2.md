@@ -98,4 +98,105 @@ Creating a new file info.php within document root
 
 ![php info file](./images/10-php-test-page.png)
 
+Page can then be accessed through `http://'server_domain_or_IP'/info.php`
+
+![php info page](./images/11-php-info-page.png)
+
+For security reasons, info.php is deleted
+
+`sudo rm /var/www/projectLEMP/info.php`
+
+![delete info.php](./images/12-delete-page.png)
+
+
+# STEP 6-RETRIEVING DATA FROM MYSQL DATABASE WITH PHP (CONTINUED)
+
+In this step you will create a test database (DB) with simple "To do list" and configure access to it, so the Nginx website would be able to query data from the DB and display it.
+
+At the time of this writing, the native MySQL PHP library mysqlnd doesn’t support caching_sha2_authentication, the default authentication method for MySQL 8. We’ll need to create a new user with the mysql_native_password authentication method in order to be able to connect to the MySQL database from PHP.
+
+We will create a database named example_database and a user named example_user, but you can replace these names with different values.
+
+Connect to the mysql console using the root account `sudo mysql`
+
+![mysql connect](./images/13-mysql-connect.png)
+
+Create a new database `mysql> CREATE DATABASE `example_database`;`
+
+![create db](./images/14-create-db.png)
+
+Create a new user named example_user, password as PassWord.1
+
+`mysql>  CREATE USER 'example_user'@'%' IDENTIFIED WITH mysql_native_password BY 'PassWord.1';`
+
+![create user](./images/15-create-user.png)
+
+Grant user permission over example_database
+
+`mysql> GRANT ALL ON example_database.* TO 'example_user'@'%';`
+
+![grant permission](./images/16-grant-permission.png)
+
+exit mysql `mysql> exit`
+
+Test if user has proper permissions by loggin in with custom user credentials
+
+`mysql -u example_user -p`
+
+Confirm access to the example_database
+
+`mysql> SHOW DATABASES;`
+
+![show database](./images/17-show-db.png)
+
+Create a test table named todo_list
+
+```
+CREATE TABLE example_database.todo_list (
+mysql>     item_id INT AUTO_INCREMENT,
+mysql>     content VARCHAR(255),
+mysql>     PRIMARY KEY(item_id)
+mysql> );
+```
+
+![test table](./images/18-create-table-todo-list.png)
+
+Insert values `mysql> INSERT INTO example_database.todo_list (content) VALUES ("My first important item");`
+
+![values](./images/19-insert-values.png)
+
+Confirm data was successfully saved `mysql>  SELECT * FROM example_database.todo_list;`
+
+![confirm data](./images/20-table-outcome.png)
+
+Create a php file in custom web root directory
+`nano /var/www/projectLEMP/todo_list.php`
+
+Write script to connect mysql database and queries for the content of the todo_list table. Copy this content into todo_list.php:
+
+```
+<?php
+$user = "example_user";
+$password = "password";
+$database = "example_database";
+$table = "todo_list";
+
+try {
+  $db = new PDO("mysql:host=localhost;dbname=$database", $user, $password);
+  echo "<h2>TODO</h2><ol>";
+  foreach($db->query("SELECT content FROM $table") as $row) {
+    echo "<li>" . $row['content'] . "</li>";
+  }
+  echo "</ol>";
+} catch (PDOException $e) {
+    print "Error!: " . $e->getMessage() . "<br/>";
+    die();
+}
+```
+![todo list](./images/21-todo-list.png)
+
+Access the page in the web browser using `http://<Public_domain_or_IP>/todo_list.php`
+![web todo list](./images/22-todo-list-on-web.png)
+
+## ALL DONE!
 
